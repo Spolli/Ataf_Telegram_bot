@@ -14,7 +14,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-API_KEY = "1121064435:AAETkb0SDomcAHgKxtl7tX2ZcNVrDy_P-X8"
+API_KEY = ""
 
 CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
 
