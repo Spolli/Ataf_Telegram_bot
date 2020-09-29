@@ -6,7 +6,7 @@ import json
 import telebot
 
 ### USER CONFIG
-API_TOKEN = "1121064435:AAETkb0SDomcAHgKxtl7tX2ZcNVrDy_P-X8"
+API_TOKEN = ""
 ### END USER CONFIG
 
 bot = telebot.TeleBot(API_TOKEN)
