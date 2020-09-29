@@ -1,19 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
 import requests
 import json
-from telegram.ext import Updater, MessageHandler, CommandHandler, Filters
-
-# Logger Config
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+import telebot
 
 ### USER CONFIG
-bot_token = "INSERT TOKEN HERE"
+API_TOKEN = "1121064435:AAETkb0SDomcAHgKxtl7tX2ZcNVrDy_P-X8"
 ### END USER CONFIG
+
+bot = telebot.TeleBot(API_TOKEN)
+
+# Handle '/start' and '/help'
+@bot.message_handler(commands=['help', 'start'])
+def send_welcome(message):
+    msg = bot.reply_to(message, """\
+    Benvenuto nel nuovo fiammeggiange bot per l'ataf
+    fatto bene stavolta!
+    """)
 
 
 def getSingleStop(stop):
@@ -25,8 +29,12 @@ def update_stops():
     with open('src/data/stops.json', 'w', encoding='utf-8') as f:
         json.dump(stops, f, ensure_ascii=False, indent=4)
     print("Updated!")
+
+@bot.message_handler(commands=['findByID'])
+def findByID(message):
+    bot.reply_to(message, "Inserisci l'ID della fermata \nEsempio ....")
+
     
-def search_for_id(id):
     with open('src/data/stops.json', 'r') as j:
         stops = json.loads(j.read())
     for stop in stops:
@@ -34,7 +42,8 @@ def search_for_id(id):
             getSingleStop(stop)
     print("Nessuna fermata trovata")
 
-def search_for_name(name):
+@bot.message_handler(commands=['findByName'])
+def findByName(message):
     with open('src/data/stops.json', 'r') as j:
         stops = json.loads(j.read())
     stop_list = []
@@ -42,34 +51,10 @@ def search_for_name(name):
         if name in stop["n"].strip():
             stop_list.append(stop)
 
-    if len(stop_list) is []:
+    if len(stop_list) == 0:
         print("Nessun risulato trovato!")
     elif len(stop_list) == 1:
         getSingleStop(stop_list[0])
     else:
         #caselle per scelta
         None
-    
-def error_handler(bot, update, error):
-    logger.warning('Update "%s" caused error "%s"' % (update, error))
-
-
-def main():
-    '''
-    updater = Updater(bot_token)
-    dp = updater.dispatcher
-    job = updater.job_queue
-    job.run_repeating(periodical_check, 600.0, 0.0)
-    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, status_update))
-    dp.add_handler(CommandHandler("banlist", cmd_banlist))
-    dp.add_handler(CommandHandler("banlist_full", cmd_banlist_full))
-    dp.add_handler(CommandHandler("unsub_banlist", cmd_unsub_banlist))
-    dp.add_error_handler(error_handler)
-    updater.start_polling()
-    updater.idle()
-    '''
-    #update_stops()
-    search_for_id("FM1153")
-
-if __name__ == '__main__':
-    main()
