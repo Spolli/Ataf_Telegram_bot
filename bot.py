@@ -57,9 +57,6 @@ def getInfo(update, context):
         return states
     except:
         update.message.reply_text(ERROR_msg, reply_markup=markup)
-      
-    finally:
-        update.message.reply_text(ERROR_msg, reply_markup=markup)
     return CHOOSING
 
 def findNearestStops(loc, update):
@@ -69,7 +66,7 @@ def findNearestStops(loc, update):
 def findByID(id, update):
     global stop_list
     timeline = None
-    stops = getJsonListLocal()
+    stops = getJsonListWeb()
     for stop in stops:
         if stop["id"] == id:
             timeline = getSingleStop(stop)['s']
@@ -133,13 +130,11 @@ def main():
                        ],
             
             TYPING_CHOICE: [
-                MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')),
-                                printStopName)],
+                MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), printStopName)],
             
             TYPING_REPLY: [
-                MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')),
-                               getInfo),
-                MessageHandler(Filters.location, getInfoLoc)],
+                MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), getInfo),
+                MessageHandler(Filters.location & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), getInfoLoc)],
         },
         
         fallbacks=[MessageHandler(Filters.regex('^Fine$'), fine)]
@@ -152,5 +147,6 @@ def main():
     updater.idle()
 
 if __name__ == "__main__":
+    update_stops()
     main()
 
