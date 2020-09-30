@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import requests
 import json
 from datetime import datetime as dt
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
 from src.data.API import API_KEY
+from src.data.msg import *
+from src.utility.async_stop import *
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -19,45 +20,36 @@ CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
 
 stop_list = {}
 
-choosing_keyboard = [['Cerca Per ID fermata'],
-                  ['Cerca per nome della fermata'],
-                  ['Fine']]
 markup = ReplyKeyboardMarkup(choosing_keyboard, one_time_keyboard=True)
 
 ####################################################################################
 
-def getJsonList():
-    return requests.get('http://www.temporealeataf.it/Mixer/Rest/PublicTransportService.svc/stops?urLat=44&urLon=12&llLat=43&llLon=10&getId=true').json()
-
-def getSingleStop(stop):
-    return requests.get(f'http://www.temporealeataf.it/Mixer/Rest/PublicTransportService.svc/single?Lat={stop["y"]}&Lon={stop["x"]}&nodeId={stop["id"]}&getSchedule=true').json()
-
 def askForID(update, context):
-    update.message.reply_text("Inserisci l'ID della fermata...")
+    update.message.reply_text(ENTER_ID_msg)
     return TYPING_REPLY
 
 def askForName(update, context):
-    update.message.reply_text("Inserisci il nome della fermata...")
+    update.message.reply_text(ENTER_NAME_msg)
     return TYPING_REPLY
 
 def getInfo(update, context):
     try:
         stop = update.message.text.upper()
         states = CHOOSING
-        if len(stop) < 7:
+        if stop.isalnum() and len(stop) < 7:
             states = findByID(stop, update)
         else:
             states = findByName(stop, update)
         return states
 
     except:
-        update.message.reply_text('Upsy stinky error', reply_markup=markup)
+        update.message.reply_text(ERROR_msg, reply_markup=markup)
         return CHOOSING
     
 def findByID(id, update):
     global stop_list
     timeline = None
-    stops = getJsonList()
+    stops = getJsonListLocal()
     for stop in stops:
         if stop["id"] == id:
             timeline = getSingleStop(stop)['s']
@@ -68,20 +60,20 @@ def findByID(id, update):
                     text += d_time.strftime('%H:%M') + '\t|\t' + time['n'] + '\t|\t' + time['t'] + '\n'
                 update.message.reply_text(text, reply_markup=markup)
             else:
-                update.message.reply_text("Non passa nessun bus, mi dispy", reply_markup=markup)
+                update.message.reply_text(NO_BUS_msg, reply_markup=markup)
     if timeline is None:
-        update.message.reply_text('Fermata non trovata!', reply_markup=markup)
+        update.message.reply_text(NO_STOP_msg, reply_markup=markup)
     stop_list = {}
     return CHOOSING 
 
 def findByName(name, update):
     global stop_list
-    stops = getJsonList()
+    stops = getJsonListLocal()
     for stop in stops:
         if name in stop['n']:
             stop_list[stop['n']] = stop
     if not stop_list:
-        update.message.reply_text('Fermata non trovata!')
+        update.message.reply_text(NO_STOP_msg)
     else:
         stops_keyboard = [['Fine']]
         for key in stop_list.keys():
@@ -95,16 +87,16 @@ def printStopName(update, context):
         name = update.message.text
         return findByID(stop_list[name]['id'], update)
     except:
-        update.message.reply_text('Upsy stinky error', reply_markup=markup)
+        update.message.reply_text(ERROR_msg, reply_markup=markup)
         return CHOOSING
     
 
 def start(update, context):
-    update.message.reply_text("Benvenuto nel bot", reply_markup=markup)
+    update.message.reply_text(WELCOME_msg, reply_markup=markup)
     return CHOOSING
 
 def fine(update, context):
-    update.message.reply_text('Buona corsa in quello scatolotto con le ruote')
+    update.message.reply_text(CLOSE_msg)
     return ConversationHandler.END
 
 
@@ -117,9 +109,9 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            CHOOSING: [MessageHandler(Filters.regex('^(Cerca Per ID fermata)$'),
+            CHOOSING: [MessageHandler(Filters.regex(f'^(Cerca Per ID fermata)$'),
                                     askForID),
-                       MessageHandler(Filters.regex('^(Cerca per nome della fermata)$'),
+                       MessageHandler(Filters.regex(f'^(Cerca per nome della fermata)$'),
                                     askForName)
                        ],
             
