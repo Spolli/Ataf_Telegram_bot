@@ -1,5 +1,6 @@
 /env/*
 /.vscode/*
-/src/data/*
+/src/data/API.py
+/src/data/stops.json
 /main.py
 /src/data/__pycache__/*
