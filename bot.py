@@ -3,8 +3,8 @@
 
 import logging
 import json
-from datetime import datetime as dt
-from telegram import ReplyKeyboardMarkup
+
+from telegram import ReplyKeyboardMarkup, ParseMode
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
 from src.data.API import API_KEY
 from src.data.msg import *
@@ -23,6 +23,8 @@ stop_list = {}
 markup = ReplyKeyboardMarkup(choosing_keyboard, one_time_keyboard=True)
 
 ####################################################################################
+
+
 
 def askForID(update, context):
     update.message.reply_text(ENTER_ID_msg)
@@ -54,11 +56,7 @@ def findByID(id, update):
         if stop["id"] == id:
             timeline = getSingleStop(stop)['s']
             if timeline:
-                text = ''
-                for time in timeline:
-                    d_time = dt.utcfromtimestamp(int(time['d'])//1000)
-                    text += d_time.strftime('%H:%M') + '\t|\t' + time['n'] + '\t|\t' + time['t'] + '\n'
-                update.message.reply_text(text, reply_markup=markup)
+                update.message.reply_text(formatTable(timeline), reply_markup=markup)#, parse_mode=ParseMode.HTML)
             else:
                 update.message.reply_text(NO_BUS_msg, reply_markup=markup)
     if timeline is None:
@@ -68,7 +66,7 @@ def findByID(id, update):
 
 def findByName(name, update):
     global stop_list
-    stops = getJsonListLocal()
+    stops = getJsonListWeb()
     for stop in stops:
         if name in stop['n']:
             stop_list[stop['n']] = stop
