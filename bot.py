@@ -40,7 +40,6 @@ def getInfoLoc(update, context):
     states = CHOOSING
     try:
         loc = update.message.location
-        #update.message.reply_text(str(loc.latitude) + "\t" + str(loc.longitude))
         states = findNearestStops(loc, update)
     except:
         update.message.reply_text(ERROR_LOC_msg, reply_markup=markup)
@@ -51,7 +50,7 @@ def getInfo(update, context):
         stop = update.message.text.upper()
         states = CHOOSING
         if stop.isalnum() and len(stop) < 7:
-            states = findByID(stop, update)
+            findByID(stop, update)
         else:
             states = findByName(stop, update)
         return states
@@ -60,13 +59,14 @@ def getInfo(update, context):
     return CHOOSING
 
 def findNearestStops(loc, update):
+    #update.message.reply_text(str(loc.latitude) + "\t" + str(loc.longitude))
     #TODO: calcolare tutte le fermate nel raggio di un kilometro dalla posizione mandata
     return CHOOSING
     
 def findByID(id, update):
     global stop_list
     timeline = None
-    stops = getJsonListWeb()
+    stops = getJsonListLocal()
     for stop in stops:
         if stop["id"] == id:
             timeline = getSingleStop(stop)['s']
@@ -77,11 +77,10 @@ def findByID(id, update):
     if timeline is None:
         update.message.reply_text(NO_STOP_msg, reply_markup=markup)
     stop_list = {}
-    return CHOOSING 
 
 def findByName(name, update):
     global stop_list
-    stops = getJsonListWeb()
+    stops = getJsonListLocal()
     for stop in stops:
         if name in stop['n']:
             stop_list[stop['n']] = stop
@@ -98,10 +97,10 @@ def findByName(name, update):
 def printStopName(update, context):
     try:
         name = update.message.text
-        return findByID(stop_list[name]['id'], update)
+        findByID(stop_list[name]['id'], update)
     except:
         update.message.reply_text(ERROR_msg, reply_markup=markup)
-        return CHOOSING
+    return CHOOSING
         
 def start(update, context):
     update.message.reply_text(WELCOME_msg, reply_markup=markup)
@@ -121,11 +120,11 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            CHOOSING: [MessageHandler(Filters.regex(f'^(Cerca Per ID fermata)$'),
+            CHOOSING: [MessageHandler(Filters.regex('^(Cerca Per ID fermata)$'),
                                     askForID),
-                       MessageHandler(Filters.regex(f'^(Cerca per nome della fermata)$'),
+                       MessageHandler(Filters.regex('^(Cerca per nome della fermata)$'),
                                     askForName),
-                        MessageHandler(Filters.regex(f'^(Cerca fermate vicine a te)$'),
+                        MessageHandler(Filters.regex('^(Cerca fermate vicine a te)$'),
                                     askForLocation)
                        ],
             
