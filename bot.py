@@ -4,7 +4,7 @@
 import logging
 import json
 
-from telegram import ReplyKeyboardMarkup, ParseMode
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
 from src.data.API import API_KEY
 from src.data.msg import *
@@ -32,6 +32,20 @@ def askForName(update, context):
     update.message.reply_text(ENTER_NAME_msg)
     return TYPING_REPLY
 
+def askForLocation(update, context):
+    update.message.reply_text(ENTER_LOC_msg)
+    return TYPING_REPLY
+
+def getInfoLoc(update, context):
+    states = CHOOSING
+    try:
+        loc = update.message.location
+        #update.message.reply_text(str(loc.latitude) + "\t" + str(loc.longitude))
+        states = findNearestStops(loc, update)
+    except:
+        update.message.reply_text(ERROR_LOC_msg, reply_markup=markup)
+    return states
+
 def getInfo(update, context):
     try:
         stop = update.message.text.upper()
@@ -41,10 +55,16 @@ def getInfo(update, context):
         else:
             states = findByName(stop, update)
         return states
-
     except:
         update.message.reply_text(ERROR_msg, reply_markup=markup)
-        return CHOOSING
+      
+    finally:
+        update.message.reply_text(ERROR_msg, reply_markup=markup)
+    return CHOOSING
+
+def findNearestStops(loc, update):
+    #TODO: calcolare tutte le fermate nel raggio di un kilometro dalla posizione mandata
+    return CHOOSING
     
 def findByID(id, update):
     global stop_list
@@ -54,7 +74,7 @@ def findByID(id, update):
         if stop["id"] == id:
             timeline = getSingleStop(stop)['s']
             if timeline:
-                update.message.reply_text(formatTable(timeline), reply_markup=markup)#, parse_mode=ParseMode.HTML)
+                update.message.reply_text(formatTable(timeline), reply_markup=markup)
             else:
                 update.message.reply_text(NO_BUS_msg, reply_markup=markup)
     if timeline is None:
@@ -85,19 +105,18 @@ def printStopName(update, context):
     except:
         update.message.reply_text(ERROR_msg, reply_markup=markup)
         return CHOOSING
-    
-
+        
 def start(update, context):
     update.message.reply_text(WELCOME_msg, reply_markup=markup)
     return CHOOSING
 
 def fine(update, context):
-    update.message.reply_text(CLOSE_msg)
+    update.message.reply_text(CLOSE_msg, reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
 def main():
-    updater = Updater(API_KEY)
+    updater = Updater(API_KEY, use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -108,7 +127,9 @@ def main():
             CHOOSING: [MessageHandler(Filters.regex(f'^(Cerca Per ID fermata)$'),
                                     askForID),
                        MessageHandler(Filters.regex(f'^(Cerca per nome della fermata)$'),
-                                    askForName)
+                                    askForName),
+                        MessageHandler(Filters.regex(f'^(Cerca fermate vicine a te)$'),
+                                    askForLocation)
                        ],
             
             TYPING_CHOICE: [
@@ -117,7 +138,8 @@ def main():
             
             TYPING_REPLY: [
                 MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')),
-                               getInfo)],
+                               getInfo),
+                MessageHandler(Filters.location, getInfoLoc)],
         },
         
         fallbacks=[MessageHandler(Filters.regex('^Fine$'), fine)]
@@ -132,5 +154,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-    #^(?=.{5,6}$)[A-Z|0-9]*$
