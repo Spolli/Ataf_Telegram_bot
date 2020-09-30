@@ -24,8 +24,6 @@ markup = ReplyKeyboardMarkup(choosing_keyboard, one_time_keyboard=True)
 
 ####################################################################################
 
-
-
 def askForID(update, context):
     update.message.reply_text(ENTER_ID_msg)
     return TYPING_REPLY
@@ -77,7 +75,7 @@ def findByName(name, update):
         for key in stop_list.keys():
             stops_keyboard.append([key])
         markup_stop = ReplyKeyboardMarkup(stops_keyboard, one_time_keyboard=True)
-        update.message.reply_text("Scegli la fermata:", reply_markup=markup_stop)
+        update.message.reply_text(CHOSE_STOP_msg, reply_markup=markup_stop)
     return TYPING_CHOICE
 
 def printStopName(update, context):
@@ -99,7 +97,7 @@ def fine(update, context):
 
 
 def main():
-    updater = Updater(API_KEY, use_context=True)
+    updater = Updater(API_KEY)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher

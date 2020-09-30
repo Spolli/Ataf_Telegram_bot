@@ -9,6 +9,7 @@ ENTER_ID_msg = "Inserisci l'ID della fermata. Lo trovi in alto a destra sul cart
 ENTER_NAME_msg = "Inserisci il nome della fermata"
 NO_BUS_msg = "Non passa nessun bus, mi dispy. Ti tocca piottare \U0001F3C3"
 NO_STOP_msg = "Nessuna fermata trovata \U0001F68F, prova a cercare di nuovo"
+CHOSE_STOP_msg = "Scegli la fermata nel menù sottostante"
 
 choosing_keyboard = [['Cerca Per ID fermata'],
                   ['Cerca per nome della fermata'],
