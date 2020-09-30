@@ -4,20 +4,18 @@
 import logging
 import requests
 import json
-import datetime
+from datetime import datetime as dt
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
-                          ConversationHandler)
-#from src/data/API.py import API_KEY
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
+from src.data.API import API_KEY
 
-API_KEY = "1121064435:AAETkb0SDomcAHgKxtl7tX2ZcNVrDy_P-X8"
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-CHOOSING, TYPING_REPLY, TYPING_CHOICE, TYPING_STOPS = range(4)
+CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
 
 stop_list = {}
 
@@ -43,50 +41,63 @@ def askForName(update, context):
     return TYPING_REPLY
 
 def getInfo(update, context):
-    stop = update.message.text
-    if len(stop) < 7:
-        findByID(stop, update)
-    else:
-        findByName(stop, update)
-    return CHOOSING
+    try:
+        stop = update.message.text.upper()
+        states = CHOOSING
+        if len(stop) < 7:
+            states = findByID(stop, update)
+        else:
+            states = findByName(stop, update)
+        return states
 
+    except:
+        update.message.reply_text('Upsy stinky error', reply_markup=markup)
+        return CHOOSING
+    
 def findByID(id, update):
-    id = id.upper
+    global stop_list
     timeline = None
     stops = getJsonList()
     for stop in stops:
         if stop["id"] == id:
             timeline = getSingleStop(stop)['s']
-            text = ''
-            for time in timeline:
-                text += str(datetime.timedelta(seconds=int(time['d'])/1000)) + '\t|\t' + time['n'] + '\t|\t' + time['t'] + '\n'
-            update.message.reply_text(text)
+            if timeline:
+                text = ''
+                for time in timeline:
+                    d_time = dt.utcfromtimestamp(int(time['d'])//1000)
+                    text += d_time.strftime('%H:%M') + '\t|\t' + time['n'] + '\t|\t' + time['t'] + '\n'
+                update.message.reply_text(text, reply_markup=markup)
+            else:
+                update.message.reply_text("Non passa nessun bus, mi dispy", reply_markup=markup)
     if timeline is None:
-        update.message.reply_text('Fermata non trovata!')
+        update.message.reply_text('Fermata non trovata!', reply_markup=markup)
+    stop_list = {}
     return CHOOSING 
 
 def findByName(name, update):
     global stop_list
     stops = getJsonList()
     for stop in stops:
-        if str(name.upper) in str(stop['n']):
-            update.message.reply_text(stop)
+        if name in stop['n']:
             stop_list[stop['n']] = stop
     if not stop_list:
         update.message.reply_text('Fermata non trovata!')
     else:
-        stops_keyboard = ['Fine']
+        stops_keyboard = [['Fine']]
         for key in stop_list.keys():
-            update.message.reply_text(key)
             stops_keyboard.append([key])
-        update.message.reply_text("Scegli la fermata", reply_markup=stops_keyboard)
+        markup_stop = ReplyKeyboardMarkup(stops_keyboard, one_time_keyboard=True)
+        update.message.reply_text("Scegli la fermata:", reply_markup=markup_stop)
     return TYPING_CHOICE
 
 def printStopName(update, context):
-    name = update.message.text
-    name = name.upper
-    findByID(stop_list[name]['id'], update)
-    return CHOOSING
+    try:
+        name = update.message.text
+        return findByID(stop_list[name]['id'], update)
+    except:
+        update.message.reply_text('Upsy stinky error', reply_markup=markup)
+        return CHOOSING
+    
 
 def start(update, context):
     update.message.reply_text("Benvenuto nel bot", reply_markup=markup)
