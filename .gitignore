@@ -6,3 +6,4 @@
 /src/data/__pycache__/*
 /src/data/__pycache__/*
 /src/utility/__pycache__/*
+tests/*

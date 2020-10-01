@@ -4,8 +4,8 @@
 import logging
 import json
 
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler)
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackQueryHandler)
 from src.data.API import API_KEY
 from src.data.msg import *
 from src.utility.async_stop import *
@@ -69,17 +69,31 @@ def findByID(id, update):
     stops = getJsonListLocal()
     for stop in stops:
         if stop["id"] == id:
-            timeline = getSingleStop(stop)['s']
+            timeline = getSingleStop(stop)
             if timeline:
-                update.message.reply_text(formatTable(timeline), reply_markup=markup)
+                stop_list = timeline
+                refresh_keyboard = [[InlineKeyboardButton('Aggiorna Orari', callback_data=1), InlineKeyboardButton('Fermata', callback_data=2)]]
+                refresh_markup = InlineKeyboardMarkup(refresh_keyboard)
+                update.message.reply_text(formatTable(timeline['s']), reply_markup=refresh_markup, one_time_keyboard=True)
             else:
                 update.message.reply_text(NO_BUS_msg, reply_markup=markup)
     if timeline is None:
         update.message.reply_text(NO_STOP_msg, reply_markup=markup)
-    stop_list = {}
+
+def refresh(update, context):
+    query = update.callback_query
+    query.answer()
+    if query.data == '1':
+        findByID(stop_list['id'], query)
+    elif query.data == '2':
+        url = f"http://maps.google.com/maps?q=loc:{stop_list['y']},{stop_list['x']}"
+        query.edit_message_text(url)
+    else:
+        query.edit_message_text(ERROR_msg)
 
 def findByName(name, update):
     global stop_list
+    stop_list.clear()
     stops = getJsonListLocal()
     for stop in stops:
         if name in stop['n']:
@@ -110,22 +124,24 @@ def fine(update, context):
     update.message.reply_text(CLOSE_msg, reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
-
 def main():
     updater = Updater(API_KEY, use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
+    #updater.dispatcher.add_handler()
+
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
             CHOOSING: [MessageHandler(Filters.regex('^(Cerca Per ID fermata)$'),
                                     askForID),
-                       MessageHandler(Filters.regex('^(Cerca per nome della fermata)$'),
+                        MessageHandler(Filters.regex('^(Cerca per nome della fermata)$'),
                                     askForName),
                         MessageHandler(Filters.regex('^(Cerca fermate vicine a te)$'),
-                                    askForLocation)
+                                    askForLocation),
+                        CallbackQueryHandler(refresh)
                        ],
             
             TYPING_CHOICE: [

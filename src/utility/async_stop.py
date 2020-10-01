@@ -30,6 +30,14 @@ def formatTable(timeline):
         table.append([time['n'], d_time, time['t']])
     return tabulate(table, headers=["N. Bus", "Arrivo", "Partenza"], tablefmt="simple")
 
+def formatData(timeline):
+    table = ''
+    for time in timeline:
+        d_time = dt.fromtimestamp(int(time['d'])/1000 + 3600).strftime('%H:%M')
+        table += '{:>4} {:>10} {:>25}\n'.format(time['n'], d_time, time['t'])
+    return table
+
+
 '''
 "\U0001F68F", 
 "\U0001F68D",
