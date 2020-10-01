@@ -73,7 +73,7 @@ def findNearestStops(lat, lon, update):
     else:
         update.message.reply_text(ERROR_msg, reply_markup=markup)
         return CHOOSING
-    
+
 def findByID(id, update):
     global stop_list
     stop_list.clear()
@@ -138,14 +138,14 @@ def fine(update, context):
     update.message.reply_text(CLOSE_msg, reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
+def undo(update, context):
+    update.message.reply_text(reply_markup=markup)
+    return CHOOSING
+
 def main():
     updater = Updater(API_KEY, use_context=True)
-
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
-
-    #updater.dispatcher.add_handler()
-
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
@@ -157,7 +157,6 @@ def main():
                                     askForLocation),
                         CallbackQueryHandler(sendLocURL, pattern='^[0-9.,]*$'),
                         CallbackQueryHandler(refresh, pattern='^\w{4,6}[a-zA-Z0-9]*$')
-                        
                        ],
             
             TYPING_CHOICE: [
@@ -168,7 +167,10 @@ def main():
                 MessageHandler(Filters.location & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), getInfoLoc),],
         },
         
-        fallbacks=[MessageHandler(Filters.regex('^Fine$'), fine)]
+        fallbacks=[
+            MessageHandler(Filters.regex('^Fine$'), fine),
+            MessageHandler(Filters.regex('^Indietro$'), undo)
+            ]
     )
 
     dp.add_handler(conv_handler)
