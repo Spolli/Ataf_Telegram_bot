@@ -71,8 +71,8 @@ def findByID(id, update):
         if stop["id"] == id:
             timeline = getSingleStop(stop)
             if timeline:
-                stop_list = timeline
-                refresh_keyboard = [[InlineKeyboardButton('Aggiorna Orari', callback_data=1), InlineKeyboardButton('Fermata', callback_data=2)]]
+                loc = f"{timeline['y']},{timeline['x']}"
+                refresh_keyboard = [[InlineKeyboardButton('Aggiorna Orari', callback_data=timeline['id']), InlineKeyboardButton('Fermata', callback_data=loc)]]
                 refresh_markup = InlineKeyboardMarkup(refresh_keyboard)
                 update.message.reply_text(formatTable(timeline['s']), reply_markup=refresh_markup, one_time_keyboard=True)
             else:
@@ -83,13 +83,15 @@ def findByID(id, update):
 def refresh(update, context):
     query = update.callback_query
     query.answer()
-    if query.data == '1':
-        findByID(stop_list['id'], query)
-    elif query.data == '2':
-        url = f"http://maps.google.com/maps?q=loc:{stop_list['y']},{stop_list['x']}"
-        query.edit_message_text(url)
-    else:
-        query.edit_message_text(ERROR_msg)
+    findByID(query.data, query)
+    return CHOOSING
+
+def sendLocURL(update, context):
+    query = update.callback_query
+    query.answer()
+    url = f"http://maps.google.com/maps?q=loc:{query.data}"
+    query.edit_message_text(url)
+    return CHOOSING
 
 def findByName(name, update):
     global stop_list
@@ -141,7 +143,9 @@ def main():
                                     askForName),
                         MessageHandler(Filters.regex('^(Cerca fermate vicine a te)$'),
                                     askForLocation),
-                        CallbackQueryHandler(refresh)
+                        CallbackQueryHandler(sendLocURL, pattern='^[0-9.,]*$'),
+                        CallbackQueryHandler(refresh, pattern='^\w{4,6}[a-zA-Z0-9]*$')
+                        
                        ],
             
             TYPING_CHOICE: [
