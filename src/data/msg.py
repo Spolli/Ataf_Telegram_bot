@@ -12,6 +12,7 @@ NO_BUS_msg = "Non passa nessun bus \U0001F68C, mi dispy. \nTi tocca piottare \U0
 NO_STOP_msg = "Nessuna fermata \U0001F68F trovata, prova a cercare di nuovo"
 CHOSE_STOP_msg = "Scegli la fermata \U0001F68F nel menù sottostante"
 ENTER_LOC_msg = "Invia la posizione\U0001F4CD, per trovare le fermate più vicine a te"
+CHOOSE_NEAR_STOP_msg = "Scegli la fermata nel menù sottostante"
 
 choosing_keyboard = [['Cerca Per ID fermata'],
                   ['Cerca per nome della fermata'],

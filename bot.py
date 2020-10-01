@@ -40,7 +40,7 @@ def getInfoLoc(update, context):
     states = CHOOSING
     try:
         loc = update.message.location
-        states = findNearestStops(loc, update)
+        states = findNearestStops(loc.latitude, loc.longitude, update)
     except:
         update.message.reply_text(ERROR_LOC_msg, reply_markup=markup)
     return states
@@ -58,13 +58,25 @@ def getInfo(update, context):
         update.message.reply_text(ERROR_msg, reply_markup=markup)
     return CHOOSING
 
-def findNearestStops(loc, update):
-    #update.message.reply_text(str(loc.latitude) + "\t" + str(loc.longitude))
-    #TODO: calcolare tutte le fermate nel raggio di un kilometro dalla posizione mandata
-    return CHOOSING
+def findNearestStops(lat, lon, update):
+    global stop_list
+    stop_list.clear()
+    stops = getJsonListLocal()
+    stop_list = calculate_circle(lat, lon, stops)
+    if not stop_list is None:
+        loc_keyboard = [['Fine']]
+        for stop in stop_list.keys():
+            loc_keyboard.append([stop])
+        location_markup = ReplyKeyboardMarkup(loc_keyboard, one_time_keyboard=True)
+        update.message.reply_text(CHOOSE_NEAR_STOP_msg, reply_markup=location_markup)
+        return TYPING_CHOICE
+    else:
+        update.message.reply_text(ERROR_msg, reply_markup=markup)
+        return CHOOSING
     
 def findByID(id, update):
     global stop_list
+    stop_list.clear()
     timeline = None
     stops = getJsonListLocal()
     for stop in stops:
@@ -73,8 +85,8 @@ def findByID(id, update):
             if timeline:
                 loc = f"{timeline['y']},{timeline['x']}"
                 refresh_keyboard = [[InlineKeyboardButton('Aggiorna Orari', callback_data=timeline['id']), InlineKeyboardButton('Fermata', callback_data=loc)]]
-                refresh_markup = InlineKeyboardMarkup(refresh_keyboard)
-                update.message.reply_text(formatTable(timeline['s']), reply_markup=refresh_markup, one_time_keyboard=True)
+                refresh_markup = InlineKeyboardMarkup(refresh_keyboard, one_time_keyboard=True)
+                update.message.reply_text(formatTable(timeline['s']), reply_markup=refresh_markup)
             else:
                 update.message.reply_text(NO_BUS_msg, reply_markup=markup)
     if timeline is None:
@@ -153,7 +165,7 @@ def main():
             
             TYPING_REPLY: [
                 MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), getInfo),
-                MessageHandler(Filters.location & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), getInfoLoc)],
+                MessageHandler(Filters.location & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), getInfoLoc),],
         },
         
         fallbacks=[MessageHandler(Filters.regex('^Fine$'), fine)]

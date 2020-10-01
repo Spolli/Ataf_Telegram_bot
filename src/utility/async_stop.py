@@ -37,6 +37,24 @@ def formatData(timeline):
         table += '{:>4} {:>10} {:>25}\n'.format(time['n'], d_time, time['t'])
     return table
 
+def calculate_circle(y , x , pos_list):
+    pi=3.14153
+    std_radius=2000 #these are meters
+    constant=0.0174533 #conversion number from decimal degree to radiant
+    point2_constant=0.004 #default number to draw 500m square around position
+    second_x=x+0.004
+    fourth_y=y+0.004
+    third_x=x-0.004
+    fifth_y=y-0.004
+    bus_stop_list={}
+    for stop in pos_list:
+        if third_x < stop['x'] < second_x and fifth_y < stop['y'] < fourth_y:
+            bus_stop_list[stop['n']] = stop
+    if bus_stop_list:
+        return bus_stop_list
+    else:
+        None
+
 
 '''
 "\U0001F68F", 
