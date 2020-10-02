@@ -4,6 +4,7 @@
 import requests
 import json
 from datetime import datetime as dt
+from datetime import date
 from tabulate import tabulate
 
 #@MWT(timeout=60*60)
@@ -25,9 +26,7 @@ def getSingleStop(stop):
 def formatTable(timeline):
     table = []
     for time in timeline:
-        #Aggiungo un'ora (3600 sec) perchè il mio localtime UTC è sballato
-        d_time = dt.fromtimestamp(int(time['d'])/1000 + 3600).strftime('%H:%M')
-        table.append([time['n'], d_time, time['t']])
+        table.append([time['n'], calc_time(time['d']), time['t']])
     return tabulate(table, headers=["N. Bus", "Arrivo", "Partenza"], tablefmt="simple")
 
 def formatData(timeline):
@@ -36,6 +35,14 @@ def formatData(timeline):
         d_time = dt.fromtimestamp(int(time['d'])/1000 + 3600).strftime('%H:%M')
         table += '{:>4} {:>10} {:>25}\n'.format(time['n'], d_time, time['t'])
     return table
+
+def calc_time(time):
+    #Aggiungo un'ora (3600 sec) perchè il mio localtime UTC è sballato
+    td = dt.combine(date.today(), dt.fromtimestamp(int(time)/1000 + 3600).time()) - dt.utcnow()
+    if td.days < 0:
+        return 'In Arrivo'
+    else:
+        return str(td.seconds//60) + "'"
 
 def calculate_circle(y , x , pos_list):
     pi=3.14153

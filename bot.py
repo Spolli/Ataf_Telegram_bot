@@ -49,11 +49,12 @@ def getInfo(update, context):
     try:
         stop = update.message.text.upper()
         states = CHOOSING
-        if stop.isalnum() and len(stop) < 7:
-            findByID(stop, update)
-        else:
-            states = findByName(stop, update)
-        return states
+        if not stop == 'INDIETRO':
+            if stop.isalnum() and len(stop) < 7:
+                findByID(stop, update)
+            else:
+                states = findByName(stop, update)
+            return states
     except:
         update.message.reply_text(ERROR_msg, reply_markup=markup)
     return CHOOSING
@@ -64,7 +65,7 @@ def findNearestStops(lat, lon, update):
     stops = getJsonListLocal()
     stop_list = calculate_circle(lat, lon, stops)
     if not stop_list is None:
-        loc_keyboard = [['Fine']]
+        loc_keyboard = [['Fine', 'Indietro']]
         for stop in stop_list.keys():
             loc_keyboard.append([stop])
         location_markup = ReplyKeyboardMarkup(loc_keyboard, one_time_keyboard=True)
@@ -102,7 +103,7 @@ def sendLocURL(update, context):
     query = update.callback_query
     query.answer()
     url = f"http://maps.google.com/maps?q=loc:{query.data}"
-    query.edit_message_text(url)
+    query.edit_message_text(url, reply_markup=markup)
     return CHOOSING
 
 def findByName(name, update):
@@ -115,7 +116,7 @@ def findByName(name, update):
     if not stop_list:
         update.message.reply_text(NO_STOP_msg)
     else:
-        stops_keyboard = [['Fine']]
+        stops_keyboard = [['Fine', 'Indietro']]
         for key in stop_list.keys():
             stops_keyboard.append([key])
         markup_stop = ReplyKeyboardMarkup(stops_keyboard, one_time_keyboard=True)
@@ -163,8 +164,8 @@ def main():
                 MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), printStopName)],
             
             TYPING_REPLY: [
-                MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), getInfo),
-                MessageHandler(Filters.location & ~(Filters.command | Filters.regex('^(Fine|fine|End|end|Done|done)$')), getInfoLoc),],
+                MessageHandler(Filters.text & ~(Filters.command | Filters.regex('^(Fine|fine|Indietro|indietro)$')), getInfo),
+                MessageHandler(Filters.location & ~(Filters.command | Filters.regex('^(Fine|fine|Indietro|indietro)$')), getInfoLoc),],
         },
         
         fallbacks=[
